@@ -13,10 +13,14 @@ pipeline {
         stage('Git Checkout') {
             when { expression { params.action == 'create' } }
             steps {
-                gitCheckout(
-                    branch: "main",
-                    url: "https://github.com/sunilsum/Java_app_3.0.git"
-                )
+                script {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        gitCheckout(
+                            branch: "main",
+                            url: "https://github.com/sunilsum/Java_app_3.0.git"
+                        )
+                    }
+                }
             }
         }
 
@@ -24,7 +28,9 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    mvnTest()
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        mvnTest()
+                    }
                 }
             }
         }
@@ -33,7 +39,9 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    mvnIntegrationTest()
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        mvnIntegrationTest()
+                    }
                 }
             }
         }
@@ -42,8 +50,10 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    def SonarQubecredentialsId = 'sonarqube-api'
-                    statiCodeAnalysis(SonarQubecredentialsId)
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        def SonarQubecredentialsId = 'sonarqube-api'
+                        statiCodeAnalysis(SonarQubecredentialsId)
+                    }
                 }
             }
         }
@@ -52,8 +62,10 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    def SonarQubecredentialsId = 'sonarqube-api'
-                    QualityGateStatus(SonarQubecredentialsId)
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        def SonarQubecredentialsId = 'sonarqube-api'
+                        QualityGateStatus(SonarQubecredentialsId)
+                    }
                 }
             }
         }
@@ -62,7 +74,9 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    mvnBuild()
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        mvnBuild()
+                    }
                 }
             }
         }
@@ -71,7 +85,9 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    dockerBuild("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        dockerBuild("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                    }
                 }
             }
         }
@@ -80,7 +96,9 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    dockerImageScan("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        dockerImageScan("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                    }
                 }
             }
         }
@@ -91,9 +109,11 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         // Log in to Docker Hub using credentials
-                        docker.withRegistry('https://index.docker.io/v1/', "$DOCKER_USER:$DOCKER_PASS") {
-                            // Push the Docker image to Docker Hub
-                            dockerImagePush("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            docker.withRegistry('https://index.docker.io/v1/', "$DOCKER_USER:$DOCKER_PASS") {
+                                // Push the Docker image to Docker Hub
+                                dockerImagePush("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                            }
                         }
                     }
                 }
@@ -104,7 +124,9 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    dockerImageCleanup("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        dockerImageCleanup("${params.ImageName}", "${params.ImageTag}", "${params.DockerHubUser}")
+                    }
                 }
             }
         }
